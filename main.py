@@ -16,18 +16,26 @@ from langchain.chat_models import ChatOllama
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
-from langchain.callbacks.manager import CallbackManager
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
+# TODO: improve delimiters and include handling of abbreviations (i.e., e.g. ...)
+def output_chunker(chunks):
+    """Used during input streaming to chunk sentences"""
+    delimiters = (".", "?", "!", ";", ":", " (", ")")
+    buffer = ""
+    for text in chunks:
+        if text.content.startswith(delimiters):
+            yield buffer + text.content[0]
+            buffer = text.content[1:]
+        else:
+            buffer += text.content
+    if buffer != "":
+        yield buffer
 
 # Load STT model
 stt_model = whisper.load_model("tiny.en")
 
 # Configure/initialize LLM chain
-model = ChatOllama(
-    model="dolphin-phi:2.7b-v2.6-q6_K",
-    callback_manager=CallbackManager([StreamingStdOutCallbackHandler()])
-)
+chat_model = ChatOllama(model="dolphin-phi:2.7b-v2.6-q6_K")
 prompt = ChatPromptTemplate.from_messages(
     [
         ("system", "You are a helpful assistant. Your responses to user queries are concise. Don't waste tokens on unwanted explanations or possible follow up questions. STICK TO WHAT THE USER REQUESTED. DO NOT MAKE THINGS UP. If there's anything you don't know, just reply: 'Sorry, I don't know'."),
@@ -43,8 +51,8 @@ chain = (
         | itemgetter("history")
     )
     | prompt
-    | model
-    # | StrOutputParser() # 👀 https://github.com/langchain-ai/langchain/issues/14980 > NotImplementedError: Need to determine which default deprecation schedule to use. within ?? minor releases
+    | chat_model
+    | output_chunker
 )
 
 # Initialize TTS model
@@ -55,11 +63,11 @@ tts = TTS(
 
 # Lists the audio devices available
 # print(query_devices())
-print(f"\n('cmd+i' to chat)")
 
 def main():
     """Listen for keyboard events"""
     try:
+        print(f"\n('cmd+i' to chat)")
         keyboard.add_hotkey('cmd+i', lambda: record_mic())
         keyboard.wait()
 
@@ -110,6 +118,7 @@ def record_mic():
         stream.close()
         file.close()
         transcribe_audio(file.name)
+        print(f"\n('cmd+i' to chat)")
 
 def transcribe_audio(filename):
     """Transcribe the audio file"""
@@ -127,27 +136,33 @@ def transcribe_audio(filename):
 def query_llm(query):
     """Send transcription to llm and persist chat history"""
     try:
-        print(f"\n🤖 THINKING...")
-        inputs = {"input": query}
-        response = chain.invoke(inputs)
-        memory.save_context(inputs, {"output": response.content})
+        print(f"\n🤔 THINKING...\n")
+        print("#" * 50)
+        input = {"input": query}
+        output = ""
+        for sentence in chain.stream(input):
+            output += sentence
+            synthesize_llm_response(sentence)
 
     except Exception as e:
         raise type(e)(str(e))
     finally:
-        synthesize_llm_response(response.content)
+        memory.save_context(input, {"output": output})
+        print("#" * 50)
+        print(f"\n💬 <<< {output}")
 
-def synthesize_llm_response(input):
+def synthesize_llm_response(sentence):
     """Synthesize the llm response and play audio"""
     try:
         print(f"\n🤖 SYNTHESIZING...")
         tts.tts_to_file(
-            text=input,
+            text=sentence,
             speaker="p244",
-            file_path="speech.wav"
+            file_path="speech.wav",
+            split_sentences=False
         )
 
-        print(f"\n🔊 SPEAKING...")
+        print(f"🔊 SPEAKING...\n")
         wave_obj = WaveObject.from_wave_file("speech.wav")
         play_obj = wave_obj.play()
         play_obj.wait_done()
@@ -155,7 +170,6 @@ def synthesize_llm_response(input):
         raise type(e)(str(e))
     finally:
         os.remove("speech.wav")
-        print(f"\n('cmd+i' to chat)")
 
 if __name__ == "__main__":
     main()
