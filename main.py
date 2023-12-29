@@ -2,28 +2,35 @@ import os
 import sys
 import queue
 import tempfile
-import keyboard
 import whisper
-
+import keyboard
 from sounddevice import InputStream, query_devices
 from soundfile import SoundFile
-
 from TTS.api import TTS
 from simpleaudio import WaveObject
-
 from operator import itemgetter
 from langchain.chat_models import ChatOllama
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 
-# TODO: improve delimiters and include handling of abbreviations (i.e., e.g. ...)
+
+# Configuration
+SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", " (", ")", "\n-")
+STT_MODEL = "tiny.en"
+CHAT_MODEL = "dolphin-phi:2.7b-v2.6-q6_K"
+SYSTEM_PROMPT="You are a helpful assistant. Your responses to user queries are concise. Don't waste tokens on unwanted explanations or possible follow up questions. STICK TO WHAT THE USER REQUESTED. DO NOT MAKE THINGS UP. If there's anything you don't know, just reply: 'Sorry, I don't know'."
+TTS_MODEL = "tts_models/en/vctk/vits"
+SPEAKER_ID = "p244"
+
+# Load STT model
+stt_model = whisper.load_model(STT_MODEL)
+
 def output_chunker(chunks):
     """Used during input streaming to chunk sentences"""
-    delimiters = (".", "?", "!", ";", ":", " (", ")")
     buffer = ""
     for text in chunks:
-        if text.content.startswith(delimiters):
+        if text.content.startswith(SENTENCE_DELIMITERS):
             yield buffer + text.content[0]
             buffer = text.content[1:]
         else:
@@ -31,24 +38,19 @@ def output_chunker(chunks):
     if buffer != "":
         yield buffer
 
-# Load STT model
-stt_model = whisper.load_model("tiny.en")
-
 # Configure/initialize LLM chain
-chat_model = ChatOllama(model="dolphin-phi:2.7b-v2.6-q6_K")
+chat_model = ChatOllama(model=CHAT_MODEL)
 prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", "You are a helpful assistant. Your responses to user queries are concise. Don't waste tokens on unwanted explanations or possible follow up questions. STICK TO WHAT THE USER REQUESTED. DO NOT MAKE THINGS UP. If there's anything you don't know, just reply: 'Sorry, I don't know'."),
+        ("system", SYSTEM_PROMPT),
         MessagesPlaceholder(variable_name="history"),
         ("human", "{input}"),
     ]
 )
 memory = ConversationBufferMemory(return_messages=True)
-
 chain = (
     RunnablePassthrough.assign(
-        history=RunnableLambda(memory.load_memory_variables)
-        | itemgetter("history")
+        history=RunnableLambda(memory.load_memory_variables) | itemgetter("history")
     )
     | prompt
     | chat_model
@@ -56,10 +58,7 @@ chain = (
 )
 
 # Initialize TTS model
-tts = TTS(
-    model_name="tts_models/en/vctk/vits",
-    progress_bar=False
-)
+tts = TTS(model_name=TTS_MODEL, progress_bar=False)
 
 # Lists the audio devices available
 # print(query_devices())
@@ -67,6 +66,7 @@ tts = TTS(
 def main():
     """Listen for keyboard events"""
     try:
+        os.system('cls||clear')
         print(f"\n('cmd+i' to chat)")
         keyboard.add_hotkey('cmd+i', lambda: record_mic())
         keyboard.wait()
@@ -157,7 +157,7 @@ def synthesize_llm_response(sentence):
         print(f"\n🤖 SYNTHESIZING...")
         tts.tts_to_file(
             text=sentence,
-            speaker="p244",
+            speaker=SPEAKER_ID,
             file_path="speech.wav",
             split_sentences=False
         )
