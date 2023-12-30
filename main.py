@@ -17,19 +17,20 @@ def main():
         #     is_standalone=True
         # )
 
-        # question_speech = assistant.synthesize(
+        # response_speech = assistant.synthesize(
         #     sentence=response,
         #     is_standalone=True
         # )
         
-        # question_transcription = assistant.transcribe(
-        #     audio_file=question_speech,
+        # response_transcription = assistant.transcribe(
+        #     audio_file=response_speech,
         #     should_remove_audio=False,
         #     is_standalone=True
         # )
-        # print(f"> {question_transcription}")
 
-        # assistant.speak(audio_file=question_speech)
+        # print(f"\n\n> {response_transcription}")
+
+        # assistant.speak(audio_file=response_speech)
 
         # # Start the assistant in auto-mode
         # assistant.start()

@@ -9,7 +9,9 @@
 </br>
 
 ## about
-100% free local voice assistant with speech recognition.
+100% free, local and offline voice assistant with speech recognition.
+
+Simple to use, easy to (hack)extend.
 
 ## requirements
 - `ollama` - [mac](https://github.com/jmorganca/ollama?tab=readme-ov-file#macos) | [windows & linux](https://github.com/jmorganca/ollama?tab=readme-ov-file#linux--wsl2)
@@ -27,5 +29,6 @@ pip install requirements.txt
 
 ## run
 ```python
-python main.py
+sudo python main.py
 ```
+> the `keyboard` package requires to be run as admin
