@@ -7,7 +7,7 @@ import tempfile
 import keyboard
 from sounddevice import InputStream, query_devices
 from soundfile import SoundFile
-from TTS.api import TTS # TODO: see other options (pyttsx3)
+from TTS.api import TTS
 from simpleaudio import WaveObject
 from operator import itemgetter
 from langchain.chat_models import ChatOllama

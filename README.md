@@ -13,6 +13,8 @@
 
 Simple to use, easy to (hack)extend.
 
+> disclaimer: only tested on a macbook pro (intel)
+
 ## requirements
 - `ollama` - [mac](https://github.com/jmorganca/ollama?tab=readme-ov-file#macos) | [windows & linux](https://github.com/jmorganca/ollama?tab=readme-ov-file#linux--wsl2)
   - ```
@@ -24,7 +26,7 @@ Simple to use, easy to (hack)extend.
 
 ## installation
 ```python
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 ## run
