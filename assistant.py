@@ -19,7 +19,7 @@ from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 HOTKEY = "cmd+i"
 USER_INPUT_MESSAGE = f"\n('{HOTKEY}' to TALK or TYPE your query)"
 STT_MODEL = "tiny.en"
-CHAT_MODEL = "dolphin-phi:2.7b-v2.6-q6_K"
+CHAT_MODEL = "dolphin-phi"
 SYSTEM_PROMPT="Your responses are concise. Do not give unwanted explanations. STICK TO WHAT IS REQUESTED. DO NOT MAKE THINGS UP. If there is anything you do not know, just reply: 'Sorry, I don't know'."
 SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", " (", ")", "\n-")
 TTS_MODEL = "tts_models/en/vctk/vits"
@@ -76,6 +76,7 @@ class Assistant:
             | self._split_sentences
         )
 
+    # TODO: improve parsing abbreviations, markdown... for proper talk-back
     def _split_sentences(self, chunks):
         """Split/compile chunks into sentences"""
         buffer = ""
