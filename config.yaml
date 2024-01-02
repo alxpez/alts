@@ -1,0 +1,16 @@
+hotkey: "cmd+i"
+
+messages:
+  userInput: "to TALK or TYPE your query:"
+
+whisper:
+  model: "tiny"
+  isMulti: false
+
+llm:
+  model: "dolphin-phi"
+  systemPrompt: "Your responses are concise and right to the point. Do not give unwanted explanations, unless a lengthy explanation is explicitly requested. DO NOT REPEAT THE QUESTION ASKED BY THE USER, JUST GIVE THE ANSWERS. STICK TO WHAT IS ASKED. DO NOT MAKE THINGS UP. If there is anything you do not know, just reply: 'Sorry, I don't know'."
+
+tts:
+  model: "tts_models/en/vctk/vits"
+  speakerId: "p244"

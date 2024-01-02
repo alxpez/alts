@@ -1,7 +1,7 @@
-openai-whisper
 keyboard
-sounddevice
 soundfile
+sounddevice
+openai-whisper
 TTS
 langchain
 simpleaudio

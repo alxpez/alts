@@ -1,11 +1,12 @@
 import os
 import sys
+import yaml
 import whisper
 import queue
 import threading
 import tempfile
 import keyboard
-from sounddevice import InputStream, query_devices
+from sounddevice import InputStream, default, query_devices
 from soundfile import SoundFile
 from TTS.api import TTS
 from simpleaudio import WaveObject
@@ -15,46 +16,45 @@ from langchain.memory import ConversationBufferMemory
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 
-# TODO: move defaults to config.yaml
-HOTKEY = "cmd+i"
-USER_INPUT_MESSAGE = f"\n('{HOTKEY}' to TALK or TYPE your query)"
-STT_MODEL = "tiny.en"
-CHAT_MODEL = "dolphin-phi"
-SYSTEM_PROMPT="Your responses are concise. Do not give unwanted explanations. STICK TO WHAT IS REQUESTED. DO NOT MAKE THINGS UP. If there is anything you do not know, just reply: 'Sorry, I don't know'."
 SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", " (", ")", "\n-")
-TTS_MODEL = "tts_models/en/vctk/vits"
-SPEAKER_ID = "p244"
 
 # TODO: improve logging (use a proper logger), remove hardcoded stdout prints.
 class Assistant:
-    def __init__(self, ollama_model=CHAT_MODEL, system_prompt=SYSTEM_PROMPT, delimiters=SENTENCE_DELIMITERS, stt_model=STT_MODEL, tts_model=TTS_MODEL, speaker_id=SPEAKER_ID, hotkey=HOTKEY, input_message=USER_INPUT_MESSAGE, auto_start=True):
+    def __init__(self, auto_start=True):
+        self._config()
+
+        if auto_start:
+            self.start()
+
+    def _config(self):
+        with open('config.yaml', 'r') as file:
+            config = yaml.safe_load(file)
+
         self.q = queue.Queue()
-        self.device = 1 # TODO: allow choosing a different input device
-        self.channels = 1
-        self.ollama_model = ollama_model
-        self.system_prompt = system_prompt
-        self.delimiters = delimiters
-        self.speaker_id = speaker_id
-        self.hotkey = hotkey
-        self.input_message = input_message
+        
+        self.system_prompt = config["llm"]["systemPrompt"]
+        self.speaker_id = config["tts"]["speakerId"]
+        self.hotkey = config["hotkey"]
+        self.input_message = f"\n'{self.hotkey}' {config['messages']['userInput']}"
 
         # Load STT model
+        stt_model = config["whisper"]["model"]
+        if not config["whisper"]["isMulti"]:
+            stt_model += f".en"
+
         self.stt = whisper.load_model(stt_model)
 
         # Load TTS model
-        self.tts = TTS(model_name=tts_model, progress_bar=False)
+        self.tts = TTS(model_name=config["tts"]["model"], progress_bar=False)
 
         # Load LLM
-        self.llm = ChatOllama(model=ollama_model)
+        self.llm = ChatOllama(model=config["llm"]["model"])
 
         # Configure LLM memory
         self.memory = ConversationBufferMemory(return_messages=True)
 
         # Create LLM chain
         self.chain = self._initialize_chain()
-
-        if auto_start:
-            self.start()
 
 
     def _initialize_chain(self):
@@ -81,7 +81,7 @@ class Assistant:
         """Split/compile chunks into sentences"""
         buffer = ""
         for text in chunks:
-            if text.content.startswith(self.delimiters):
+            if text.content.startswith(SENTENCE_DELIMITERS):
                 yield buffer + text.content[0]
                 buffer = text.content[1:]
             else:
@@ -112,21 +112,23 @@ class Assistant:
     def listen(self, is_standalone=False):
         """Record microphone audio to a .wav file"""
         try:
-            device_info = query_devices(self.device, 'input')
+            device_info = query_devices(default.device, 'input')
             samplerate = int(device_info['default_samplerate'])
+            channels = device_info['max_input_channels']
+            device = device_info['index']
 
             filename = tempfile.mktemp(suffix='.wav', dir='')
             file = SoundFile(
                 filename,
                 mode='x',
                 samplerate=samplerate,
-                channels=self.channels
+                channels=channels
             )
 
             stream = InputStream(
                 samplerate=samplerate,
-                device=self.device,
-                channels=self.channels,
+                device=device,
+                channels=channels,
                 callback=self._input_stream_callback
             )
             stream.start()
