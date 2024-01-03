@@ -1,4 +1,4 @@
-hotkey: "cmd+i"
+hotkey: "ctrl+space"
 
 messages:
   userInput: "to TALK or TYPE your query:"

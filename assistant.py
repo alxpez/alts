@@ -96,20 +96,20 @@ class Assistant:
 
         keyboard.add_hotkey(self.hotkey, lambda: self.listen())
 
-        user_input_thread = threading.Thread(target=self._wait_input)
+        def _wait_input():
+            """Process user input"""
+            print(self.input_message)
+            while True:
+                self.think(query=input())
+
+        user_input_thread = threading.Thread(target=_wait_input)
         user_input_thread.start()
         user_input_thread.join()
 
         keyboard.wait()
 
-    def _wait_input(self):
-        """Process user input"""
-        print(self.input_message)
-        while True:
-            self.think(query=input())
 
-
-    def listen(self, is_standalone=False):
+    def listen(self, is_auto=True):
         """Record microphone audio to a .wav file"""
         try:
             device_info = query_devices(default.device, 'input')
@@ -125,22 +125,27 @@ class Assistant:
                 channels=channels
             )
 
+            def _input_stream_callback(indata, frames, time, status):
+                if status:
+                    print(status, file=sys.stderr)
+                self.q.put(indata.copy())
+
             stream = InputStream(
                 samplerate=samplerate,
                 device=device,
                 channels=channels,
-                callback=self._input_stream_callback
+                callback=_input_stream_callback
             )
             stream.start()
 
             print("\n🎙️  LISTENING...")
-            while keyboard.is_pressed('command') and keyboard.is_pressed('i'):
+            while keyboard.is_pressed(self.hotkey):
                 file.write(self.q.get())
             
             stream.close()
             file.close()
 
-            if not is_standalone:
+            if is_auto:
                 self.transcribe(audio_file=file.name)
             
             return file.name
@@ -148,13 +153,8 @@ class Assistant:
         except Exception as e:
             raise type(e)(str(e))
 
-    def _input_stream_callback(self, indata, frames, time, status):
-        if status:
-            print(status, file=sys.stderr)
-        self.q.put(indata.copy())
 
-
-    def transcribe(self, audio_file, should_remove_audio=True, is_standalone=False):
+    def transcribe(self, audio_file, should_remove_audio=True, is_auto=True):
         """Transcribe an audio file"""
         try:
             print("📝 TRANSCRIBING...")
@@ -164,7 +164,7 @@ class Assistant:
             if should_remove_audio:
                 os.remove(audio_file)
 
-            if not is_standalone:
+            if is_auto:
                 self.think(query=transcription['text'])
             
             return transcription['text']
@@ -173,7 +173,7 @@ class Assistant:
             raise type(e)(str(e))
             
 
-    def think(self, query, is_standalone=False):
+    def think(self, query, is_auto=True):
         """Send a query to an LLM and stream response sentence-by-sentence"""
         try:
             print(f"\n🤔 THINKING...\n")
@@ -182,7 +182,7 @@ class Assistant:
             output = ""
             for sentence in self.chain.stream(input_data):
                 output += sentence
-                if not is_standalone:
+                if is_auto:
                     self.synthesize(sentence)
             
             self.memory.save_context(input_data, {"output": output}) 
@@ -195,7 +195,7 @@ class Assistant:
             raise type(e)(str(e))
             
 
-    def synthesize(self, sentence, is_standalone=False):
+    def synthesize(self, sentence, is_auto=True):
         """Synthesize text into an audio file"""
         try:
             print(f"\n🤖 SYNTHESIZING...")
@@ -208,7 +208,7 @@ class Assistant:
                 split_sentences=False
             )
 
-            if not is_standalone:
+            if is_auto:
                 self.speak(filename)
                 
             return filename
