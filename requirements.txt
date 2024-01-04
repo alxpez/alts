@@ -1,3 +1,4 @@
+python-dotenv
 keyboard @ git+https://github.com/Sandmann6d/keyboard.git
 soundfile
 sounddevice

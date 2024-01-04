@@ -1,22 +1,24 @@
 import os
 import sys
 import yaml
-import whisper
+import json
 import queue
-import threading
-import tempfile
+import whisper
 import keyboard
+import requests
+import tempfile
+import threading
 from sounddevice import InputStream, default, query_devices
 from soundfile import SoundFile
 from TTS.api import TTS
 from simpleaudio import WaveObject
-from operator import itemgetter
-from langchain.chat_models import ChatOllama
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from dotenv import load_dotenv
 
-SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", " (", ")", "\n-")
+load_dotenv()
+
+LLM_API_KEY = os.getenv('LLM_API_KEY')
+BASE_REQ_HEADERS = {"Content-Type": "application/json"}
+SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", "(", ") ", "\n-")
 
 # TODO: improve logging (use a proper logger), remove hardcoded stdout prints.
 class Assistant:
@@ -47,47 +49,12 @@ class Assistant:
         # Load TTS model
         self.tts = TTS(model_name=config["tts"]["model"], progress_bar=False)
 
-        # Load LLM
-        self.llm = ChatOllama(model=config["llm"]["model"])
-
-        # Configure LLM memory
-        self.memory = ConversationBufferMemory(return_messages=True)
-
-        # Create LLM chain
-        self.chain = self._initialize_chain()
-
-
-    def _initialize_chain(self):
-        """Create LLM chat chain with memory"""
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", self.system_prompt),
-                MessagesPlaceholder(variable_name="history"),
-                ("human", "{input}"),
-            ]
-        )
-
-        return (
-            RunnablePassthrough.assign(
-                history=RunnableLambda(self.memory.load_memory_variables) | itemgetter("history")
-            )
-            | prompt
-            | self.llm
-            | self._split_sentences
-        )
-
-    # TODO: improve parsing abbreviations, markdown... for proper talk-back
-    def _split_sentences(self, chunks):
-        """Split/compile chunks into sentences"""
-        buffer = ""
-        for text in chunks:
-            if text.content.startswith(SENTENCE_DELIMITERS):
-                yield buffer + text.content[0]
-                buffer = text.content[1:]
-            else:
-                buffer += text.content
-        if buffer != "":
-            yield buffer
+        # Load LLM config: initialize messages and config req. headers
+        self.llm = config["llm"]
+        self.llm["messages"] = [{ "role": "system", "content": self.llm["system"] }]
+        self.llm["headers"] = BASE_REQ_HEADERS
+        if LLM_API_KEY:
+            self.llm["headers"]["Authorization"] = f"Bearer {LLM_API_KEY}"
 
 
     def start(self):
@@ -178,18 +145,44 @@ class Assistant:
         try:
             print(f"\n🤔 THINKING...\n")
             print("#" * 50)
-            input_data = {"input": query}
-            output = ""
-            for sentence in self.chain.stream(input_data):
-                output += sentence
-                if is_auto:
+
+            self.llm["messages"].append({ "role": "user", "content": query })
+
+            params = {
+                "model": self.llm["model"],
+                "messages": self.llm["messages"],
+                "stream":True
+            }
+            response = requests.post(
+                self.llm["url"],
+                headers=self.llm["headers"],
+                json=params,
+                stream=True
+            )
+            response.raise_for_status()
+
+            full_response = ""
+            sentence_buffer = []
+            for line in response.iter_lines():
+                body = json.loads(line)
+                token = body["message"]["content"]
+                full_response += token
+                sentence_buffer.append(token)
+
+                if is_auto and token.startswith(SENTENCE_DELIMITERS):
+                    sentence = "".join(sentence_buffer)
                     self.synthesize(sentence)
-            
-            self.memory.save_context(input_data, {"output": output}) 
-            print("#" * 50)
-            print(f"\n💬 <<< {output}")
-            print(self.input_message)
-            return output
+                    sentence_buffer = []
+
+                if "error" in body:
+                    self.synthesize(f"Error: {body['error']}")
+
+                if body.get("done", False):
+                    self.llm["messages"].append({"role": "assistant", "content": full_response})
+                    print("#" * 50)
+                    print(f"\n💬 <<< {full_response}")
+                    print(self.input_message)
+                    return full_response
         
         except Exception as e:
             raise type(e)(str(e))
