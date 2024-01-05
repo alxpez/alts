@@ -18,9 +18,11 @@ load_dotenv()
 
 LLM_API_KEY = os.getenv('LLM_API_KEY')
 BASE_REQ_HEADERS = {"Content-Type": "application/json"}
-SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", "(", ") ", "\n-")
+SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", ": ", " (", ")", "\n-", " -", "\n–", " –")
 
 # TODO: improve logging (use a proper logger), remove hardcoded stdout prints.
+# TODO: better handling of KeyboardInterrupt to exit more gracefully
+# TODO: implement cancelling of assistant jobs (automatically when querying something new? by keyboard?)
 class Assistant:
     def __init__(self, auto_start=True):
         self._config()
@@ -28,16 +30,16 @@ class Assistant:
         if auto_start:
             self.start()
 
+            
     def _config(self):
+        self.speech_q = queue.Queue()
+        self.user_input_thread = threading.Thread(target = self._user_text_input_worker, daemon=True)
+
         with open('config.yaml', 'r') as file:
             config = yaml.safe_load(file)
-
-        self.q = queue.Queue()
         
-        self.system_prompt = config["llm"]["systemPrompt"]
-        self.speaker_id = config["tts"]["speakerId"]
         self.hotkey = config["hotkey"]
-        self.input_message = f"\n'{self.hotkey}' {config['messages']['userInput']}"
+        self.input_message = f"'{self.hotkey}' {config['messages']['userInput']}\n"
 
         # Load STT model
         stt_model = config["whisper"]["model"]
@@ -48,6 +50,7 @@ class Assistant:
 
         # Load TTS model
         self.tts = TTS(model_name=config["tts"]["model"], progress_bar=False)
+        self.speaker_id = config["tts"]["speakerId"]
 
         # Load LLM config: initialize messages and config req. headers
         self.llm = config["llm"]
@@ -55,34 +58,78 @@ class Assistant:
         self.llm["headers"] = BASE_REQ_HEADERS
         if LLM_API_KEY:
             self.llm["headers"]["Authorization"] = f"Bearer {LLM_API_KEY}"
+        else:
+            # TODO
+            print("TODO: preload local model in memory")
+
+
+    def _user_audio_input_worker(self):
+        """Process user audio input"""
+
+        print("\n🎙️  LISTENING...")
+        audio_file = self.listen()
+
+        print("\n📝 TRANSCRIBING...")
+        transcription = self.transcribe(audio_file=audio_file)
+        print(f"💬 >>>{transcription}")
+
+        self._llm_worker(transcription)
+        
+    
+    def _user_text_input_worker(self):
+        """Process user text input"""
+        while True:
+            self._llm_worker(input())
+
+
+    def _llm_worker(self, query):
+        """Process llm response"""
+        print(f"\n🤔 THINKING...\n")
+        speech_thread = threading.Thread(target=self._speech_worker, daemon=True)
+        speech_thread.start()
+        for sentence in self.think(query=query):
+            audio_file = self.synthesize(sentence)
+            self.speech_q.put(audio_file)
+        
+        self.speech_q.put(None)
+        speech_thread.join()
+
+
+    def _speech_worker(self):
+        """Process speech audio files"""
+        while True:
+            audio_file = self.speech_q.get()
+            
+            if audio_file is None:
+                print(self.input_message)
+                break
+
+            print(f"\n🔊 SPEAKING...\n")
+            self.speak(audio_file)
 
 
     def start(self):
         """Start assistant with default behavior"""
         os.system('cls||clear')
+        print(self.input_message)
 
-        keyboard.add_hotkey(self.hotkey, lambda: self.listen())
+        keyboard.add_hotkey(self.hotkey, lambda: self._user_audio_input_worker())
 
-        def _wait_input():
-            """Process user input"""
-            print(self.input_message)
-            while True:
-                self.think(query=input())
-
-        user_input_thread = threading.Thread(target=_wait_input)
-        user_input_thread.start()
-        user_input_thread.join()
+        self.user_input_thread.start()
+        self.user_input_thread.join()
 
         keyboard.wait()
 
-
-    def listen(self, is_auto=True):
+        
+    def listen(self):
         """Record microphone audio to a .wav file"""
         try:
             device_info = query_devices(default.device, 'input')
             samplerate = int(device_info['default_samplerate'])
             channels = device_info['max_input_channels']
             device = device_info['index']
+
+            mic_record_q = queue.Queue()
 
             filename = tempfile.mktemp(suffix='.wav', dir='')
             file = SoundFile(
@@ -95,7 +142,7 @@ class Assistant:
             def _input_stream_callback(indata, frames, time, status):
                 if status:
                     print(status, file=sys.stderr)
-                self.q.put(indata.copy())
+                mic_record_q.put(indata.copy())
 
             stream = InputStream(
                 samplerate=samplerate,
@@ -105,120 +152,99 @@ class Assistant:
             )
             stream.start()
 
-            print("\n🎙️  LISTENING...")
             while keyboard.is_pressed(self.hotkey):
-                file.write(self.q.get())
+                file.write(mic_record_q.get())
             
             stream.close()
             file.close()
 
-            if is_auto:
-                self.transcribe(audio_file=file.name)
-            
             return file.name
 
         except Exception as e:
             raise type(e)(str(e))
 
 
-    def transcribe(self, audio_file, should_remove_audio=True, is_auto=True):
+    def transcribe(self, audio_file, remove_audio=True):
         """Transcribe an audio file"""
         try:
-            print("📝 TRANSCRIBING...")
             transcription = self.stt.transcribe(audio_file, fp16=False)
-            print(f"💬 >>>{transcription['text']}")
 
-            if should_remove_audio:
+            if remove_audio:
                 os.remove(audio_file)
 
-            if is_auto:
-                self.think(query=transcription['text'])
-            
             return transcription['text']
 
         except Exception as e:
             raise type(e)(str(e))
             
 
-    def think(self, query, is_auto=True):
-        """Send a query to an LLM and stream response sentence-by-sentence"""
+    def think(self, query, buffer_sentences=True):
+        """Send a query to an LLM and stream response"""
         try:
-            print(f"\n🤔 THINKING...\n")
-            print("#" * 50)
-
             self.llm["messages"].append({ "role": "user", "content": query })
 
             params = {
                 "model": self.llm["model"],
                 "messages": self.llm["messages"],
-                "stream":True
+                "stream": True
             }
             response = requests.post(
                 self.llm["url"],
                 headers=self.llm["headers"],
-                json=params,
-                stream=True
+                json=params
             )
             response.raise_for_status()
 
-            full_response = ""
-            sentence_buffer = []
+            full_response = buffer = ""
             for line in response.iter_lines():
                 body = json.loads(line)
                 token = body["message"]["content"]
                 full_response += token
-                sentence_buffer.append(token)
 
-                if is_auto and token.startswith(SENTENCE_DELIMITERS):
-                    sentence = "".join(sentence_buffer)
-                    self.synthesize(sentence)
-                    sentence_buffer = []
+                if buffer_sentences:
+                    if token.startswith(SENTENCE_DELIMITERS):
+                        yield buffer + token[0]
+                        buffer = token[1:]
+                    else:
+                        buffer += token
+                else:
+                    yield token
 
-                if "error" in body:
-                    self.synthesize(f"Error: {body['error']}")
+                # TODO: handle llm API errors
+                # if "error" in body and auto:
+                #     self.synthesis_q.put(f"Error: {body['error']}")
 
                 if body.get("done", False):
                     self.llm["messages"].append({"role": "assistant", "content": full_response})
-                    print("#" * 50)
-                    print(f"\n💬 <<< {full_response}")
-                    print(self.input_message)
-                    return full_response
+            
+            if buffer_sentences and buffer != "":
+                yield buffer
         
         except Exception as e:
             raise type(e)(str(e))
-            
 
-    def synthesize(self, sentence, is_auto=True):
+    def synthesize(self, sentence):
         """Synthesize text into an audio file"""
         try:
-            print(f"\n🤖 SYNTHESIZING...")
-            filename = tempfile.mktemp(suffix='.wav', dir='')
-
-            self.tts.tts_to_file(
+            return self.tts.tts_to_file(
                 text=sentence,
                 speaker=self.speaker_id,
-                file_path=filename,
+                file_path=tempfile.mktemp(suffix='.wav', dir=''),
                 split_sentences=False
             )
-
-            if is_auto:
-                self.speak(filename)
-                
-            return filename
         
         except Exception as e:
             raise type(e)(str(e))
         
 
-    def speak(self, audio_file, should_remove_audio=True):
+    def speak(self, audio_file, remove_audio=True):
         """Play an audio file"""
         try:
-            print(f"🔊 SPEAKING...\n")
             wave_obj = WaveObject.from_wave_file(audio_file)
             play_obj = wave_obj.play()
             play_obj.wait_done()
 
-            if should_remove_audio:
+            if remove_audio:
                 os.remove(audio_file)
         
         except Exception as e:
