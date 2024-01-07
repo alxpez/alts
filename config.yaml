@@ -8,9 +8,9 @@ whisper:
   isMulti: false
 
 llm:
-  url: "http://localhost:11434/api/chat"
-  model: "dolphin-phi"
-  system: "Your responses are concise and right to the point. Do not give unwanted explanations, unless a lengthy explanation is explicitly requested. DO NOT REPEAT THE QUESTION ASKED BY THE USER, JUST GIVE THE ANSWERS. STICK TO WHAT IS ASKED. DO NOT MAKE THINGS UP. If there is anything you do not know, just reply: 'Sorry, I don't know'."
+  url: "http://localhost:11434"
+  model: "ollama/dolphin-phi"
+  system: "You are ALTS, a helpful AI assistant. Your responses are limited to the user's questions. Stick to the questions. Be concise. Avoid verbosity when possible"
 
 tts:
   model: "tts_models/en/vctk/vits"

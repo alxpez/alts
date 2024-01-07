@@ -11,18 +11,18 @@
 ## about
 100% free, local and offline voice assistant with speech recognition.
 
-Simple to use, easy to (hack)extend.
-
-> disclaimer: only tested on a macbook pro (intel)
-
 ## requirements
-- `ollama` - [mac](https://github.com/jmorganca/ollama?tab=readme-ov-file#macos) | [windows & linux](https://github.com/jmorganca/ollama?tab=readme-ov-file#linux--wsl2)
-  - ```
-    ollama pull dolphin-phi
-    ```
-  - > by default we use `dolphin-phi`; an uncensored, very tiny and quick model, great for low resources machines (but feel free to download and use any model you like, just change `CHAT_MODEL` variable)
+By default, this project is configured to work with [Ollama](https://ollama.ai/), running the [`dolphin-phi` model](https://ollama.ai/library/dolphin-phi); an uncensored, very tiny and quick model, great for low resources machines. This set up makes the whole system completely free to run locally.
 
-- `whisper` - [setup](https://github.com/openai/whisper?tab=readme-ov-file#setup)
+However, ALTS uses [LiteLLM](https://github.com/BerriAI/litellm) in order to be provider agnostic, so you have full freedom to pick and choose your own combination.
+Take a look at the supported [Models/Providers](https://docs.litellm.ai/docs/providers) for more details on configurations.
+> See `.env.template` and `config.yaml`
+
+`whisper` is a general-purpose speech recognition model. ALTS uses it to transcribe your voice queries - [setup](https://github.com/openai/whisper?tab=readme-ov-file#setup)
+> The whisper model might need to be downloaded prior to running the assistant
+
+`TTS` is a library for advanced Text-to-Speech generation. ALTS uses it to talk back to you - [setup](https://github.com/coqui-ai/TTS/tree/dev#installation)
+> The TTS model might need to be downloaded prior to running the assistant
 
 ## installation
 ```python
@@ -33,4 +33,10 @@ pip install -r requirements.txt
 ```python
 sudo python main.py
 ```
-> the `keyboard` package requires to be run as admin
+> the `keyboard` package requires to be run as admin (in macOS and Linux)
+
+---
+
+> TODO: Include extra information and examples of LLM configurations
+
+> TODO: Include extra requirements for windows installation
