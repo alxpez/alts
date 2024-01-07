@@ -4,5 +4,4 @@ soundfile
 sounddevice
 openai-whisper
 TTS
-langchain
 simpleaudio

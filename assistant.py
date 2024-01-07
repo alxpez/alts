@@ -43,12 +43,14 @@ class Assistant:
 
         # Load STT model
         stt_model = config["whisper"]["model"]
-        if not config["whisper"]["isMulti"]:
+        if config["whisper"]["isMulti"] == False:
             stt_model += f".en"
 
+        # TODO: download model if not already downloaded?? (causing error on w11)
         self.stt = whisper.load_model(stt_model)
 
         # Load TTS model
+        # TODO: download model if not already downloaded?? (causing error on w11)
         self.tts = TTS(model_name=config["tts"]["model"], progress_bar=False)
         self.speaker_id = config["tts"]["speakerId"]
 
