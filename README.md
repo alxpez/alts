@@ -11,29 +11,6 @@
 ## 💬 about
 100% free, local and offline assistant with speech recognition and talk-back functionalities.
 
-## ✅ get it running
-clone the repo
-```ssh
-git clone https://github.com/alxpez/alts.git
-```
-
-go to the main folder
-```ssh
-cd alts/
-```
-
-install the project dependencies
-```ssh
-pip install -r requirements.txt
-```
-> see the [pre-requisites](#pre-requisites) section, to make sure your machine is ready to start the ALTS
-
-start up the assistant
-```ssh
-sudo python assistant.py
-```
-> the `keyboard` package requires to be run as admin (in macOS and Linux), it's not the case on Windows
-
 ## 🤖 default usage
 <!-- 
 TODO: FUTURE FEATURES:
@@ -69,14 +46,52 @@ You can also write your query directly into your terminal (if you don't wanna ta
 
 <!-- TODO: Include extra information and examples of LLM configurations -->
 
-
 - ### stt
-  We use `whisper` to transcribe your voice queries. It's a general-purpose speech recognition model - [setup](https://github.com/openai/whisper?tab=readme-ov-file#setup)
-  > You might need to manually download a whisper model before running the assistant
+  We use `openAI's whisper` to transcribe your voice queries. It's a general-purpose speech recognition model.
+
+  You will need to have [`ffmepg`](https://ffmpeg.org/) installed in your environment, you can [download](https://ffmpeg.org/download.html) it from the official site.
+
+  Make sure to check out their [setup](https://github.com/openai/whisper?tab=readme-ov-file#setup) docs, for any other requirement.
+  > If you stumble into errors, one reason could be the model not downloading automatically. If that's the case you can run a `whisper` example transcription in your terminal ([see examples](https://github.com/openai/whisper?tab=readme-ov-file#command-line-usage)) or manually download it and place the model-file in the [correct folder](https://github.com/openai/whisper/discussions/63)
 
 
 - ### tts
-  We use `TTS` for ALTS to talk-back to you. It's a library for advanced Text-to-Speech generation - [setup](https://github.com/coqui-ai/TTS/tree/dev#installation)
-  > You might need to manually download a TTS model before running the assistant
+  We use `coqui-TTS` for ALTS to talk-back to you. It's a library for advanced Text-to-Speech generation.
+
+  You will need to install [`eSpeak-ng`](https://github.com/espeak-ng/espeak-ng) in your environment:
+  - macOS – `brew install espeak`
+  - linux – `sudo apt-get install espeak -y`
+  - windows – [download](https://github.com/espeak-ng/espeak-ng/releases) the executable from their repo
+    > on __windows__ you'll also need `Desktop development with C++` and `.NET desktop build tools`.
+    > Download the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) and install these dependencies.
+
+  Make sure to check out their [setup](https://github.com/coqui-ai/TTS/tree/dev#installation) docs, for any other requirement.
+  > If you don't have the configured model already downloaded it should download automatically during startup, however if you encounter any problems, a model can be pre-downloaded by running the following:
+  >  ```ssh
+  >  tts --text "this is a setup test" --out_path test_output.wav --model_name tts_models/en/vctk/vits
+  >  ```
 
 <!-- TODO: Include extra requirements for windows installation -->
+## ✅ get it running
+clone the repo
+```ssh
+git clone https://github.com/alxpez/alts.git
+```
+
+go to the main folder
+```ssh
+cd alts/
+```
+
+install the project dependencies
+```ssh
+pip install -r requirements.txt
+```
+> see the [pre-requisites](#pre-requisites) section, to make sure your machine is ready to start the ALTS
+
+start up the assistant
+```ssh
+sudo python assistant.py
+```
+> the `keyboard` package requires to be run as admin (in macOS and Linux), it's not the case on Windows
+
