@@ -36,7 +36,8 @@ class Assistant:
             config = yaml.safe_load(file)
         
         self.hotkey = config["hotkey"]
-        self.input_message = f"'{self.hotkey}' {config['messages']['userInput']}\n"
+        self.ready_message = config['messages']['readyMessage']
+        self.input_message = config['messages']['inputMessage']
 
         # Load STT model
         stt_model = config["whisper"]["model"]
@@ -71,7 +72,7 @@ class Assistant:
     def _user_text_input_worker(self):
         """Process user text input"""
         while True:
-            self._llm_worker(input())
+            self._llm_worker(input(self.input_message))
 
 
     def _llm_worker(self, query):
@@ -94,7 +95,7 @@ class Assistant:
             audio_file = self.speech_q.get()
             
             if audio_file is None:
-                print(self.input_message)
+                print(self.ready_message)
                 break
 
             print(f"\n🔊 SPEAKING...\n")
@@ -104,7 +105,7 @@ class Assistant:
     def start(self):
         """Start assistant with default behavior"""
         os.system('cls||clear')
-        print(self.input_message)
+        print(self.ready_message)
 
         keyboard.add_hotkey(self.hotkey, lambda: self._user_audio_input_worker())
 
@@ -176,12 +177,21 @@ class Assistant:
             self.llm["messages"].append({ "role": "user", "content": query })
             full_response = ""
 
-            response = completion(
-                model=self.llm["model"], 
-                messages=self.llm["messages"], 
-                api_base=self.llm["url"],
-                stream=True,
-            )
+            if not self.llm["custom_provider"] or "":
+                response = completion(
+                    model=self.llm["model"], 
+                    messages=self.llm["messages"], 
+                    api_base=self.llm["url"],
+                    stream=True
+                )
+            else:
+                response = completion(
+                    model=self.llm["model"], 
+                    messages=self.llm["messages"], 
+                    api_base=self.llm["url"],
+                    custom_llm_provider=self.llm["custom_provider"],
+                    stream=True
+                )
 
             for sentence in self._parse_response(response, buffer_sentences):
                 full_response += sentence
@@ -192,6 +202,7 @@ class Assistant:
         except Exception as e:
             raise type(e)(str(e))
     
+    # TODO: move to helpers
     # TODO: improve parsing abbreviations, markdown?... for proper talk-back edge-cases
     def _parse_response(self, chunks, buffer_sentences):
         """Split/compile chunks into sentences"""
@@ -238,3 +249,7 @@ class Assistant:
         
         except Exception as e:
             raise type(e)(str(e))
+
+
+if __name__ == "__main__":
+    Assistant()
