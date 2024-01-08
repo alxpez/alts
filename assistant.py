@@ -10,7 +10,7 @@ from sounddevice import InputStream, default, query_devices
 from soundfile import SoundFile
 from TTS.api import TTS
 from simpleaudio import WaveObject
-from litellm import completion, stream_chunk_builder
+from litellm import completion
 from dotenv import load_dotenv
 
 load_dotenv()
