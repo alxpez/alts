@@ -1,7 +1,8 @@
 hotkey: "ctrl+space"
 
 messages:
-  userInput: "to TALK or TYPE your query:"
+  readyMessage: "+---------------------------------+\n| TALK while holding <ctrl+space> |\n|       or TYPE your query        |\n+---------------------------------+\n"
+  inputMessage: "> "
 
 whisper:
   model: "tiny"
@@ -11,6 +12,7 @@ llm:
   url: "http://localhost:11434"
   model: "ollama/dolphin-phi"
   system: "You are ALTS, a helpful AI assistant. Your responses are limited to the user's questions. Stick to the questions. Be concise. Avoid verbosity when possible"
+  custom_provider: ""
 
 tts:
   model: "tts_models/en/vctk/vits"
