@@ -8,10 +8,10 @@
 
 </br>
 
-## about
+## 💬 about
 100% free, local and offline assistant with speech recognition and talk-back functionalities.
 
-## get it running
+## ✅ get it running
 clone the repo
 ```ssh
 git clone https://github.com/alxpez/alts.git
@@ -34,7 +34,7 @@ sudo python assistant.py
 ```
 > the `keyboard` package requires to be run as admin (in macOS and Linux), it's not the case on Windows
 
-## default usage
+## 🤖 default usage
 <!-- 
 TODO: FUTURE FEATURES:
 - voice-to-clipboard: talk to take notes, write emails... paste raw or parsed text.
@@ -56,7 +56,7 @@ You can also write your query directly into your terminal (if you don't wanna ta
 
 > Be aware that if you configure ALTS with external providers (eg. OpenAI) your queries will be sent to their servers.
 
-## pre-requisites
+## ⚙️ pre-requisites
 - ### python
   > Tested: version \>=3.11 on macOS and version \>= 3.8 on windows
 
