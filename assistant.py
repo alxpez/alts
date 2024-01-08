@@ -77,7 +77,7 @@ class Assistant:
 
     def _llm_worker(self, query):
         """Process llm response"""
-        print(f"\n🤔 THINKING...\n")
+        print(f"\n💭 THINKING...\n")
         speech_thread = threading.Thread(target=self._speech_worker, daemon=True)
         speech_thread.start()
 

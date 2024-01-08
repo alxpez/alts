@@ -4,7 +4,7 @@
     <img width="180" src="logo.png">
   </a>
 </p>
-<p align="center">( <strong>a</strong>ssistant: <strong>l</strong>istent | <strong>t</strong>hink | <strong>s</strong>peak )</p>
+<p align="center">( 🤖 <strong>a</strong>ssistant: 🎙️ <strong>l</strong>istent | 💭 <strong>t</strong>hink | 🔊 <strong>s</strong>peak )</p>
 
 </br>
 
@@ -46,9 +46,9 @@ TODO: FUTURE FEATURES:
 (include interface to text too)
 -->
 ALTS runs in the background and waits for you to press `ctrl+space` (you can modify the hotkey combination in `config.yaml`).
-- While holding the hotkey, your voice will be recorded by your default input sound device.
-- Once you release, the recording stops and its transcript is sent to your configured LLM.
-- The LLM response then gets synthesized and played back to you.
+- 🎙️ While holding the hotkey, your voice will be recorded by your default input sound device.
+- 💭 Once you release, the recording stops and its transcript is sent to your configured LLM.
+- 🔊 The LLM response then gets synthesized and played back to you.
 
 You can also write your query directly into your terminal (if you don't wanna talk), the assistant will still speak back to you.
 
