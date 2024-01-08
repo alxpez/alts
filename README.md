@@ -89,7 +89,7 @@ install the project dependencies
 ```ssh
 pip install -r requirements.txt
 ```
-> see the [pre-requisites](#pre-requisites) section, to make sure your machine is ready to start the ALTS
+> see the [pre-requisites](#%EF%B8%8F-pre-requisites) section, to make sure your machine is ready to start the ALTS
 
 start up the assistant
 ```ssh
