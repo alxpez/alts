@@ -69,9 +69,9 @@ You can also write your query directly into your terminal (if you don't wanna ta
     > Download the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) and install these dependencies.
 
   Make sure to check out their [setup](https://github.com/coqui-ai/TTS/tree/dev#installation) docs, for any other requirement.
-  > if you don't have the configured model already downloaded it should download automatically during startup, however if you encounter any problems, a model can be pre-downloaded by running the following:
+  > if you don't have the configured model already downloaded it should download automatically during startup, however if you encounter any problems, the default model can be pre-downloaded by running the following:
   >  ```ssh
-  >  tts --text "this is a setup test" --out_path test_output.wav --model_name tts_models/en/vctk/vits
+  >  tts --text "this is a setup test" --out_path test_output.wav --model_name tts_models/en/vctk/vits --speaker_idx p244
   >  ```
 
 ## ✅ get it running
