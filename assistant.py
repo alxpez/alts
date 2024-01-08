@@ -59,12 +59,12 @@ class Assistant:
     def _user_audio_input_worker(self):
         """Process user audio input"""
 
-        print("\n🎙️  LISTENING...")
+        print("🎙️  LISTENING...")
         audio_file = self.listen()
 
-        print("\n📝 TRANSCRIBING...")
+        print("\n💬 TRANSCRIBING...")
         transcription = self.transcribe(audio_file=audio_file)
-        print(f"💬 >>>{transcription}")
+        print(f">>>{transcription}")
 
         self._llm_worker(transcription)
         
@@ -77,7 +77,7 @@ class Assistant:
 
     def _llm_worker(self, query):
         """Process llm response"""
-        print(f"\n🤔 THINKING...\n")
+        print(f"\n💭 THINKING...\n")
         speech_thread = threading.Thread(target=self._speech_worker, daemon=True)
         speech_thread.start()
 
