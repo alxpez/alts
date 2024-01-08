@@ -4,7 +4,7 @@
     <img width="180" src="logo.png">
   </a>
 </p>
-<p align="center">( 🤖 <strong>a</strong>ssistant: 🎙️ <strong>l</strong>istent | 💭 <strong>t</strong>hink | 🔊 <strong>s</strong>peak )</p>
+<p align="center">( 🤖 <strong>a</strong>ssistant: 🎙️ <strong>l</strong>isten | 💭 <strong>t</strong>hink | 🔊 <strong>s</strong>peak )</p>
 
 </br>
 
