@@ -32,9 +32,9 @@ ALTS runs in the background and waits for you to press `ctrl+space` (you can mod
 
 You can also write your query directly into your terminal (if you don't wanna talk), the assistant will still speak back to you.
 
-> ALL processes are local and __NONE__ of your recordings or queries are leave your environment; the recordings are deleted as soon as they are used; it's __ALL PRIVATE__ by _default_.
+> ALL processes are local and __NONE__ of your recordings or queries are leave your environment; the recordings are deleted as soon as they are used; it's __ALL PRIVATE__ by _default_
 
-> Be aware that if you configure ALTS with external providers (eg. OpenAI) your queries will be sent to their servers.
+> Be aware that if you configure ALTS with external providers (eg. OpenAI) your queries will be sent to their servers
 
 ## ⚙️ pre-requisites
 - ### python
