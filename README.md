@@ -73,6 +73,10 @@ You can also write your query directly into your terminal (if you don't wanna ta
   >  ```ssh
   >  tts --text "this is a setup test" --out_path test_output.wav --model_name tts_models/en/vctk/vits --speaker_idx p244
   >  ```
+  > The default model has several "speakers" to choose from; running the following command will serve a demo site where you can test the different voices available:
+  > ```ssh
+  > tts-server --model_name tts_models/en/vctk/vits
+  > ```
 
 ## ✅ get it running
 clone the repo

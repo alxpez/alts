@@ -16,4 +16,4 @@ llm:
 
 tts:
   model: "tts_models/en/vctk/vits"
-  speakerId: "p244"
+  speakerId: "p364"

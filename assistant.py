@@ -29,8 +29,8 @@ class Assistant:
 
             
     def _config(self):
+        self.current_lang = None
         self.speech_q = queue.Queue()
-        self.user_input_thread = threading.Thread(target = self._user_text_input_worker, daemon=True)
 
         with open('config.yaml', 'r') as file:
             config = yaml.safe_load(file)
@@ -40,30 +40,33 @@ class Assistant:
         self.input_message = config['messages']['inputMessage']
 
         # Load STT model
-        stt_model = config["whisper"]["model"]
-        if config["whisper"]["isMulti"] == False:
-            stt_model += f".en"
+        self.stt_config = config["whisper"]
+        if not self.stt_config["isMulti"]:
+            self.stt_config["model"] += f".en"
 
         # TODO: download model if not already downloaded?? (causing error on w11)
-        self.stt = whisper.load_model(stt_model)
+        self.stt = whisper.load_model(self.stt_config["model"])
 
         # Load TTS model
         # TODO: download model if not already downloaded?? (causing error on w11)
+        self.tts_config = config["tts"]
         self.tts = TTS(model_name=config["tts"]["model"], progress_bar=False)
-        self.speaker_id = config["tts"]["speakerId"]
 
         # Load LLM config: initialize messages and config req. headers
         self.llm = config["llm"]
         self.llm["messages"] = [{ "role": "system", "content": self.llm["system"] }] if self.llm["system"] else []
 
+
     def _user_audio_input_worker(self):
         """Process user audio input"""
 
         print("🎙️  LISTENING...")
-        audio_file = self.listen()
+        audio = self.listen()
 
         print("\n💬 TRANSCRIBING...")
-        transcription = self.transcribe(audio_file=audio_file)
+        transcription_data = self.transcribe(audio=audio)
+        transcription = transcription_data["text"]
+        self.current_lang = transcription_data["language"]
         print(f">>>{transcription}")
 
         self._llm_worker(transcription)
@@ -82,8 +85,8 @@ class Assistant:
         speech_thread.start()
 
         for sentence in self.think(query=query):
-            audio_file = self.synthesize(sentence)
-            self.speech_q.put(audio_file)
+            audio = self.synthesize(text=sentence)
+            self.speech_q.put(audio)
         
         self.speech_q.put(None)
         speech_thread.join()
@@ -92,14 +95,14 @@ class Assistant:
     def _speech_worker(self):
         """Process speech audio files"""
         while True:
-            audio_file = self.speech_q.get()
+            audio = self.speech_q.get()
             
-            if audio_file is None:
+            if audio is None:
                 print(self.ready_message)
                 break
 
             print(f"\n🔊 SPEAKING...\n")
-            self.speak(audio_file)
+            self.speak(audio)
 
 
     def start(self):
@@ -109,8 +112,9 @@ class Assistant:
 
         keyboard.add_hotkey(self.hotkey, lambda: self._user_audio_input_worker())
 
-        self.user_input_thread.start()
-        self.user_input_thread.join()
+        user_input_thread = threading.Thread(target = self._user_text_input_worker, daemon=True)
+        user_input_thread.start()
+        user_input_thread.join()
 
         keyboard.wait()
 
@@ -158,21 +162,51 @@ class Assistant:
             raise type(e)(str(e))
 
 
-    def transcribe(self, audio_file, remove_audio=True):
-        """Transcribe an audio file"""
+    def transcribe(self, audio, remove_audio=True):
+        """
+        Transcribe an audio file using Whisper
+
+        Parameters
+        ----------
+        `audio`: str
+            Path to the audio file to transcribe
+
+        `remove_audio`: bool
+            Whether to delete the audio file after transcribing it
+
+        Returns
+        -------
+        A dictionary containing the resulting text ("text") and segment-level details ("segments"), and
+        the spoken language ("language") detected.
+        """
         try:
-            transcription = self.stt.transcribe(audio_file, fp16=False)
+            result = self.stt.transcribe(audio, fp16=False)
 
             if remove_audio:
-                os.remove(audio_file)
+                os.remove(audio)
 
-            return transcription['text']
+            return result
 
         except Exception as e:
             raise type(e)(str(e))
 
+
     def think(self, query, buffer_sentences=True):
-        """Send a query to an LLM and stream response"""
+        """
+        Send a query to an LLM and stream the response
+
+        Parameters
+        ----------
+        `query`: str
+            Query to prompt the LLM with
+
+        `buffer_sentences`: bool
+            Whether to buffer and return the result sentence by sentence
+
+        Returns
+        -------
+        A generator object containing strings.
+        """
         try:
             self.llm["messages"].append({ "role": "user", "content": query })
             full_response = ""
@@ -205,7 +239,7 @@ class Assistant:
     # TODO: move to helpers
     # TODO: improve parsing abbreviations, markdown?... for proper talk-back edge-cases
     def _parse_response(self, chunks, buffer_sentences):
-        """Split/compile chunks into sentences"""
+        """Split/compile LLM response chunks into sentences"""
         buffer = ""
         for chunk in chunks:
             token = chunk['choices'][0]['delta']['content'] or ""
@@ -223,33 +257,72 @@ class Assistant:
             yield buffer
 
 
-    def synthesize(self, sentence):
-        """Synthesize text into an audio file"""
+    def synthesize(self, text, split_sentences=False):
+        """
+        Synthesize text into an audio file
+
+        Parameters
+        ----------
+        `sentence`: str
+            Text to be synthesized into audio
+        
+        `lang`: str
+            Language code of the text to synthesize (only applies to multilingual models)
+
+        `split_sentences`: bool
+            Whether the text should be splitted into sentences
+
+        Returns
+        -------
+        Path to the audio file with the synthesized sentence.
+        """
         try:
+            speaker = self.tts_config["speakerId"] if self.tts.is_multi_speaker and self.tts_config["speakerId"] in self.tts.speakers else None
+            language = self.current_lang if self.tts.is_multi_lingual and self.current_lang in self.tts.languages else None
+
             return self.tts.tts_to_file(
-                text=sentence,
-                speaker=self.speaker_id,
-                file_path=tempfile.mktemp(suffix='.wav', dir=''),
-                split_sentences=False
+                text=text,
+                speaker=speaker,
+                language=language,
+                split_sentences=split_sentences,
+                file_path=tempfile.mktemp(suffix='.wav', dir='')
             )
         
         except Exception as e:
             raise type(e)(str(e))
         
 
-    def speak(self, audio_file, remove_audio=True):
-        """Play an audio file"""
+    def speak(self, audio, remove_audio=True):
+        """
+        Play an audio file
+
+        Parameters
+        ----------
+        `audio`: str
+            Path to the audio file to play
+
+        `remove_audio`: bool
+            Whether to delete the audio file after transcribing it
+        """
         try:
-            wave_obj = WaveObject.from_wave_file(audio_file)
+            wave_obj = WaveObject.from_wave_file(audio)
             play_obj = wave_obj.play()
             play_obj.wait_done()
 
             if remove_audio:
-                os.remove(audio_file)
+                os.remove(audio)
         
         except Exception as e:
             raise type(e)(str(e))
 
 
+def main():
+    try:
+        Assistant()
+
+    except Exception as e:
+        print(e)
+
+
 if __name__ == "__main__":
-    Assistant()
+    main()
