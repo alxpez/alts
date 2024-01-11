@@ -17,8 +17,8 @@ from notifypy import Notify
 load_dotenv()
 
 notification = Notify(
-    default_notification_application_name="ALTS",
-    default_notification_title="------",
+    default_notification_application_name="alts",
+    default_notification_title="",
     default_notification_icon="logo.png"
 )
 
@@ -82,7 +82,7 @@ class ALTS:
         self.current_lang = transcription_data["language"]
 
         print(f">>>{transcription}")
-        # notify(message=f'💬 You said: "{transcription}"')
+        # notify(message=f'query: "{transcription}"')
 
         self._llm_worker(transcription)
         
@@ -116,7 +116,7 @@ class ALTS:
             
             if audio is None:
                 print(self.messages["ready"])
-                # notify(message=f'💭 ALTS replied: "{self.llm["messages"][-1]["content"]}"')
+                # notify(message=f'response: "{self.llm["messages"][-1]["content"]}"')
                 notify(message=self.messages["ready"])
                 break
 

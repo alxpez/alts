@@ -95,9 +95,16 @@ pip install -r requirements.txt
 ```
 > see the [pre-requisites](#%EF%B8%8F-pre-requisites) section, to make sure your machine is ready to start the ALTS
 
-start up the assistant
+duplicate and rename the needed config files
 ```ssh
-sudo python assistant.py
+cp config-template.yaml config.yaml
+cp .env.template .env
+```
+> modify the default configuration to your needs
+
+start up ALTS
+```ssh
+sudo python alts.py
 ```
 > the `keyboard` package requires to be run as admin (in macOS and Linux), it's not the case on Windows
 
