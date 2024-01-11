@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import yaml
 import queue
 import whisper
@@ -12,10 +13,22 @@ from TTS.api import TTS
 from simpleaudio import WaveObject
 from litellm import completion
 from dotenv import load_dotenv
+from notifypy import Notify
 
 load_dotenv()
 
-SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", ": ", " (", ")", "\n-", " -", "\n–", " –")
+notification = Notify(
+    default_notification_application_name="alts",
+    default_notification_icon="logo.png"
+)
+
+def notify(title="alts", subtitle="", message=""):
+    notification.application_name = title
+    notification.title = subtitle
+    notification.message = message
+    notification.send(block=False)
+
+SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", ": ", " (", ")", "\n-", " -", "- ", "\n–", " –", "– ")
 
 # TODO: improve logging (use a proper logger), remove hardcoded stdout prints.
 # TODO: better handling of KeyboardInterrupt to exit more gracefully
@@ -36,8 +49,9 @@ class Assistant:
             config = yaml.safe_load(file)
         
         self.hotkey = config["hotkey"]
-        self.ready_message = config['messages']['readyMessage']
-        self.input_message = config['messages']['inputMessage']
+        self.messages = config['messages']
+
+        notify(title="⚙️ ALTS", message=self.messages["starting"])
 
         # Load STT model
         self.stt_config = config["whisper"]
@@ -59,15 +73,18 @@ class Assistant:
 
     def _user_audio_input_worker(self):
         """Process user audio input"""
-
         print("🎙️  LISTENING...")
+        notify(title="🎙️ ALTS", message=self.messages["listening"])
+
         audio = self.listen()
 
         print("\n💬 TRANSCRIBING...")
         transcription_data = self.transcribe(audio=audio)
         transcription = transcription_data["text"]
         self.current_lang = transcription_data["language"]
+
         print(f">>>{transcription}")
+        # notify(title="💬 You said:", message=f'"{transcription}"')
 
         self._llm_worker(transcription)
         
@@ -75,15 +92,17 @@ class Assistant:
     def _user_text_input_worker(self):
         """Process user text input"""
         while True:
-            self._llm_worker(input(self.input_message))
+            self._llm_worker(input(self.messages["textInput"]))
 
 
     def _llm_worker(self, query):
         """Process llm response"""
-        print(f"\n💭 THINKING...\n")
+        print("\n💭 THINKING...\n")
+
         speech_thread = threading.Thread(target=self._speech_worker, daemon=True)
         speech_thread.start()
 
+        notify(title="💭 ALTS", message=self.messages["thinking"])
         for sentence in self.think(query=query):
             audio = self.synthesize(text=sentence)
             self.speech_q.put(audio)
@@ -98,17 +117,20 @@ class Assistant:
             audio = self.speech_q.get()
             
             if audio is None:
-                print(self.ready_message)
+                print(self.messages["ready"])
+                # notify(title="💭 ALTS replied:", message=f'"{self.llm["messages"][-1]["content"]}"')
+                notify(title="✅ ALTS", message=self.messages["ready"])
                 break
 
-            print(f"\n🔊 SPEAKING...\n")
+            print("\n🔊 SPEAKING...\n")
             self.speak(audio)
 
 
     def start(self):
         """Start assistant with default behavior"""
         os.system('cls||clear')
-        print(self.ready_message)
+        print(self.messages["ready"])
+        notify(title="✅ ALTS", message=self.messages["ready"])
 
         keyboard.add_hotkey(self.hotkey, lambda: self._user_audio_input_worker())
 

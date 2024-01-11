@@ -6,3 +6,4 @@ openai-whisper
 TTS
 simpleaudio
 litellm
+notify-py
