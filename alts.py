@@ -17,7 +17,7 @@ from notifypy import Notify
 load_dotenv()
 
 notification = Notify(
-    default_notification_application_name="alts",
+    default_notification_application_name="alts ",
     default_notification_title="",
     default_notification_icon="logo.png"
 )
