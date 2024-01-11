@@ -1,6 +1,5 @@
 import os
 import sys
-import time
 import yaml
 import queue
 import whisper
@@ -33,7 +32,7 @@ SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", ": ", " (", ")", "\n-", " -", "-
 # TODO: improve logging (use a proper logger), remove hardcoded stdout prints.
 # TODO: better handling of KeyboardInterrupt to exit more gracefully
 # TODO: implement cancelling of assistant jobs (automatically when querying something new? by keyboard?)
-class Assistant:
+class ALTS:
     def __init__(self, auto_start=True):
         self._config()
 
