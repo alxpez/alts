@@ -1,13 +1,13 @@
 hotkey: "cmd+esc"
 
 messages:
-  starting: "getting things ready, wait a moment..."
-  ready: "hold <cmd+esc> to talk to ALTS"
+  starting: "⚙️ getting things ready, wait a moment..."
+  ready: "✅ hold <cmd+esc> to talk to ALTS"
   textInput: "> "
-  listening: "listening..."
-  transcribing: "transcribing..."
-  thinking: "processing your request..."
-  speaking: "responding to you..."
+  listening: "🎙️ listening..."
+  transcribing: "💬 transcribing..."
+  thinking: "💭 processing your request..."
+  speaking: "🔊 responding to you..."
 
 whisper:
   model: "tiny"

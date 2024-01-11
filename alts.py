@@ -17,13 +17,12 @@ from notifypy import Notify
 load_dotenv()
 
 notification = Notify(
-    default_notification_application_name="alts",
+    default_notification_application_name="ALTS",
+    default_notification_title="------",
     default_notification_icon="logo.png"
 )
 
-def notify(title="alts", subtitle="", message=""):
-    notification.application_name = title
-    notification.title = subtitle
+def notify(message=""):
     notification.message = message
     notification.send(block=False)
 
@@ -50,7 +49,7 @@ class ALTS:
         self.hotkey = config["hotkey"]
         self.messages = config['messages']
 
-        notify(title="⚙️ ALTS", message=self.messages["starting"])
+        notify(message=self.messages["starting"])
 
         # Load STT model
         self.stt_config = config["whisper"]
@@ -72,8 +71,8 @@ class ALTS:
 
     def _user_audio_input_worker(self):
         """Process user audio input"""
-        print("🎙️  LISTENING...")
-        notify(title="🎙️ ALTS", message=self.messages["listening"])
+        print("\n🎙️  LISTENING...")
+        notify(message=self.messages["listening"])
 
         audio = self.listen()
 
@@ -83,7 +82,7 @@ class ALTS:
         self.current_lang = transcription_data["language"]
 
         print(f">>>{transcription}")
-        # notify(title="💬 You said:", message=f'"{transcription}"')
+        # notify(message=f'💬 You said: "{transcription}"')
 
         self._llm_worker(transcription)
         
@@ -101,7 +100,7 @@ class ALTS:
         speech_thread = threading.Thread(target=self._speech_worker, daemon=True)
         speech_thread.start()
 
-        notify(title="💭 ALTS", message=self.messages["thinking"])
+        notify(message=self.messages["thinking"])
         for sentence in self.think(query=query):
             audio = self.synthesize(text=sentence)
             self.speech_q.put(audio)
@@ -117,8 +116,8 @@ class ALTS:
             
             if audio is None:
                 print(self.messages["ready"])
-                # notify(title="💭 ALTS replied:", message=f'"{self.llm["messages"][-1]["content"]}"')
-                notify(title="✅ ALTS", message=self.messages["ready"])
+                # notify(message=f'💭 ALTS replied: "{self.llm["messages"][-1]["content"]}"')
+                notify(message=self.messages["ready"])
                 break
 
             print("\n🔊 SPEAKING...\n")
@@ -129,7 +128,7 @@ class ALTS:
         """Start assistant with default behavior"""
         os.system('cls||clear')
         print(self.messages["ready"])
-        notify(title="✅ ALTS", message=self.messages["ready"])
+        notify(message=self.messages["ready"])
 
         keyboard.add_hotkey(self.hotkey, lambda: self._user_audio_input_worker())
 
@@ -339,7 +338,7 @@ class ALTS:
 
 def main():
     try:
-        Assistant()
+        ALTS()
 
     except Exception as e:
         print(e)
