@@ -26,7 +26,7 @@ def notify(message=""):
     notification.message = message
     notification.send(block=False)
 
-SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", ": ", " (", ")", "\n-", " -", "- ", "\n–", " –", "– ")
+SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", ": ", " (", ")", "\n-", "\n- ", " -", "- ", "\n–", "\n– ", " –", "– ")
 
 # TODO: improve logging (use a proper logger), remove hardcoded stdout prints.
 # TODO: better handling of KeyboardInterrupt to exit more gracefully
@@ -297,7 +297,7 @@ class ALTS:
         Path to the audio file with the synthesized sentence.
         """
         try:
-            speaker = self.tts_config["speakerId"] if self.tts.is_multi_speaker and self.tts_config["speakerId"] in self.tts.speakers else None
+            speaker = self.tts_config["speakerId"] if self.tts.is_multi_speaker else None
             language = self.current_lang if self.tts.is_multi_lingual and self.current_lang in self.tts.languages else None
 
             return self.tts.tts_to_file(

@@ -16,7 +16,7 @@ whisper:
 llm:
   url: "http://localhost:11434"
   model: "ollama/dolphin-phi"
-  system: "You are ALTS, a helpful AI assistant. Your responses are limited to the user's questions. Stick to the questions. Be concise. Avoid verbosity when possible"
+  system: "You are ALTS, a helpful AI assistant"
   custom_provider: ""
 
 tts:
