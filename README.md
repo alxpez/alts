@@ -26,9 +26,9 @@ TODO: FUTURE FEATURES:
 (include interface to text too)
 -->
 ALTS runs in the background and waits for you to press `cmd+esc` (or `win+esc`).
-- 🎙️ While holding the hotkey, your voice will be recorded _(...saves in the project root)_.
-- 💭 On release, the recording stops and a transcript is sent to the LLM _(...and the recording is deleted)_.
-- 🔊 The LLM responses then get synthesized and played back to you _(...and also are displayed as desktop notifications)_.
+- 🎙️ While holding the hotkey, your voice will be recorded _(saves in the project root)_.
+- 💭 On release, the recording stops and a transcript is sent to the LLM _(the recording is deleted)_.
+- 🔊 The LLM responses then get synthesized and played back to you _(also shown as desktop notifications)_.
 
 You can modify the hotkey combination and other settings in your `config.yaml`.
 
