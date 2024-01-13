@@ -25,16 +25,14 @@ TODO: FUTURE FEATURES:
 (or a simple installable package at least)
 (include interface to text too)
 -->
-ALTS runs in the background and waits for you to press `cmd+esc` (in windows it will map to `win+esc`). You can modify the hotkey combination and other settings in your `config.yaml`.
-- 🎙️ While holding the hotkey, your voice will be recorded by your mic.
-- 💭 On release, the recording stops and a transcript is sent to the LLM.
-- 🔊 The LLM responses then get synthesized and played back to you.
+ALTS runs in the background and waits for you to press `cmd+esc` (or `win+esc`).
+- 🎙️ While holding the hotkey, your voice will be recorded (temporarily saved in the project root).
+- 💭 On release, the recording stops and a transcript is sent to the LLM (and the recording deleted).
+- 🔊 The LLM responses then get synthesized and played back to you (and also display them as desktop notifications).
 
-You can also write your query directly into your terminal (if you don't wanna talk), the assistant will still speak back to you.
+You can modify the hotkey combination and other settings in your `config.yaml`.
 
 > ALL processes are local and __NONE__ of your recordings or queries leave your environment; the recordings are deleted as soon as they are used; it's __ALL PRIVATE__ by _default_
-
-> Be aware that if you configure ALTS with external providers (eg. OpenAI) your queries will be sent to their servers
 
 ## ⚙️ pre-requisites
 - ### python

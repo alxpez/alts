@@ -20,7 +20,7 @@ notification = Notify(
     default_notification_application_name="alts ",
     default_notification_title="",
     default_notification_icon="logo.png",
-    # custom_mac_notificator="Notificator.app"
+    # custom_mac_notificator="ALTS.app"
 )
 
 def notify(message=""):
