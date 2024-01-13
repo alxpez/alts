@@ -25,16 +25,14 @@ TODO: FUTURE FEATURES:
 (or a simple installable package at least)
 (include interface to text too)
 -->
-ALTS runs in the background and waits for you to press `ctrl+space` (you can modify the hotkey combination in `config.yaml`).
-- 🎙️ While holding the hotkey, your voice will be recorded by your mic.
-- 💭 On release, the recording stops and a transcript is sent to the LLM.
-- 🔊 The LLM responses then get synthesized and played back to you.
+ALTS runs in the background and waits for you to press `cmd+esc` (or `win+esc`).
+- 🎙️ While holding the hotkey, your voice will be recorded _(...saves in the project root)_.
+- 💭 On release, the recording stops and a transcript is sent to the LLM _(...and the recording is deleted)_.
+- 🔊 The LLM responses then get synthesized and played back to you _(...and also are displayed as desktop notifications)_.
 
-You can also write your query directly into your terminal (if you don't wanna talk), the assistant will still speak back to you.
+You can modify the hotkey combination and other settings in your `config.yaml`.
 
 > ALL processes are local and __NONE__ of your recordings or queries leave your environment; the recordings are deleted as soon as they are used; it's __ALL PRIVATE__ by _default_
-
-> Be aware that if you configure ALTS with external providers (eg. OpenAI) your queries will be sent to their servers
 
 ## ⚙️ pre-requisites
 - ### python
@@ -45,7 +43,7 @@ You can also write your query directly into your terminal (if you don't wanna ta
 
   However, we use [LiteLLM](https://github.com/BerriAI/litellm) in order to be provider agnostic, so you have full freedom to pick and choose your own combinations.
   Take a look at the supported [Models/Providers](https://docs.litellm.ai/docs/providers) for more details on LLM configuration.
-  > See `.env.template` and `config.yaml` for customizing your setup
+  > See `.env.template` and `config-template.yaml` for customizing your setup
 
 <!-- TODO: Include extra information and examples of LLM configurations -->
 
@@ -71,7 +69,7 @@ You can also write your query directly into your terminal (if you don't wanna ta
   Make sure to check out their [setup](https://github.com/coqui-ai/TTS/tree/dev#installation) docs, for any other requirement.
   > if you don't have the configured model already downloaded it should download automatically during startup, however if you encounter any problems, the default model can be pre-downloaded by running the following:
   >  ```ssh
-  >  tts --text "this is a setup test" --out_path test_output.wav --model_name tts_models/en/vctk/vits --speaker_idx p244
+  >  tts --text "this is a setup test" --out_path test_output.wav --model_name tts_models/en/vctk/vits --speaker_idx p364
   >  ```
   > The default model has several "speakers" to choose from; running the following command will serve a demo site where you can test the different voices available:
   > ```ssh
@@ -95,9 +93,16 @@ pip install -r requirements.txt
 ```
 > see the [pre-requisites](#%EF%B8%8F-pre-requisites) section, to make sure your machine is ready to start the ALTS
 
-start up the assistant
+duplicate and rename the needed config files
 ```ssh
-sudo python assistant.py
+cp config-template.yaml config.yaml
+cp .env.template .env
+```
+> modify the default configuration to your needs
+
+start up ALTS
+```ssh
+sudo python alts.py
 ```
 > the `keyboard` package requires to be run as admin (in macOS and Linux), it's not the case on Windows
 

@@ -1,0 +1,24 @@
+hotkey: "cmd+esc"
+
+messages:
+  starting: "getting things ready, wait a moment..."
+  ready: "hold CMD+ESC to talk to ALTS"
+  textInput: "> "
+  listening: "listening..."
+  transcribing: "transcribing..."
+  thinking: "processing your request..."
+  speaking: "responding to you..."
+
+whisper:
+  model: "tiny"
+  isMulti: false
+
+llm:
+  url: "http://localhost:11434"
+  model: "ollama/dolphin-phi"
+  system: "You are ALTS, a helpful AI assistant"
+  custom_provider: ""
+
+tts:
+  model: "tts_models/en/vctk/vits"
+  speakerId: "p364"

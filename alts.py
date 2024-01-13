@@ -6,6 +6,7 @@ import whisper
 import keyboard
 import tempfile
 import threading
+from notifypy import Notify
 from sounddevice import InputStream, default, query_devices
 from soundfile import SoundFile
 from TTS.api import TTS
@@ -15,12 +16,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", ": ", " (", ")", "\n-", " -", "\n–", " –")
+notification = Notify(
+    default_notification_application_name="alts ",
+    default_notification_title="",
+    default_notification_icon="logo.png",
+    # custom_mac_notificator="ALTS.app"
+)
+
+def notify(message=""):
+    notification.message = message
+    notification.send(block=False)
+
+SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", ": ", " (", ")", "\n-", "\n- ", " -", "- ", "\n–", "\n– ", " –", "– ")
 
 # TODO: improve logging (use a proper logger), remove hardcoded stdout prints.
 # TODO: better handling of KeyboardInterrupt to exit more gracefully
 # TODO: implement cancelling of assistant jobs (automatically when querying something new? by keyboard?)
-class Assistant:
+class ALTS:
     def __init__(self, auto_start=True):
         self._config()
 
@@ -36,8 +48,9 @@ class Assistant:
             config = yaml.safe_load(file)
         
         self.hotkey = config["hotkey"]
-        self.ready_message = config['messages']['readyMessage']
-        self.input_message = config['messages']['inputMessage']
+        self.messages = config['messages']
+
+        notify(message=self.messages["starting"])
 
         # Load STT model
         self.stt_config = config["whisper"]
@@ -59,14 +72,16 @@ class Assistant:
 
     def _user_audio_input_worker(self):
         """Process user audio input"""
+        print("\n🎙️  LISTENING...")
+        notify(message=self.messages["listening"])
 
-        print("🎙️  LISTENING...")
         audio = self.listen()
 
         print("\n💬 TRANSCRIBING...")
         transcription_data = self.transcribe(audio=audio)
         transcription = transcription_data["text"]
         self.current_lang = transcription_data["language"]
+
         print(f">>>{transcription}")
 
         self._llm_worker(transcription)
@@ -75,18 +90,21 @@ class Assistant:
     def _user_text_input_worker(self):
         """Process user text input"""
         while True:
-            self._llm_worker(input(self.input_message))
+            self._llm_worker(input(self.messages["textInput"]))
 
 
     def _llm_worker(self, query):
         """Process llm response"""
-        print(f"\n💭 THINKING...\n")
+        print("\n💭 THINKING...\n")
+
+        notify(message=self.messages["thinking"])
+
         speech_thread = threading.Thread(target=self._speech_worker, daemon=True)
         speech_thread.start()
 
         for sentence in self.think(query=query):
-            audio = self.synthesize(text=sentence)
-            self.speech_q.put(audio)
+            synth_data = self.synthesize(text=sentence)
+            self.speech_q.put(synth_data)
         
         self.speech_q.put(None)
         speech_thread.join()
@@ -95,20 +113,23 @@ class Assistant:
     def _speech_worker(self):
         """Process speech audio files"""
         while True:
-            audio = self.speech_q.get()
+            synth_data = self.speech_q.get()
             
-            if audio is None:
-                print(self.ready_message)
+            if synth_data is None:
+                print(self.messages["ready"])
+                notify(message=self.messages["ready"])
                 break
 
-            print(f"\n🔊 SPEAKING...\n")
-            self.speak(audio)
+            notify(message=f'"{synth_data["text"].strip()}"')
+            print("\n🔊 SPEAKING...\n")
+            self.speak(synth_data["audio"])
 
 
     def start(self):
         """Start assistant with default behavior"""
         os.system('cls||clear')
-        print(self.ready_message)
+        print(self.messages["ready"])
+        notify(message=self.messages["ready"])
 
         keyboard.add_hotkey(self.hotkey, lambda: self._user_audio_input_worker())
 
@@ -257,7 +278,7 @@ class Assistant:
             yield buffer
 
 
-    def synthesize(self, text, split_sentences=False):
+    def synthesize(self, text, split_sentences=True):
         """
         Synthesize text into an audio file
 
@@ -274,19 +295,21 @@ class Assistant:
 
         Returns
         -------
-        Path to the audio file with the synthesized sentence.
+        A dictionary containing the path to the audio file of the synthesized text ("audio") and the text itself ("text").
         """
         try:
-            speaker = self.tts_config["speakerId"] if self.tts.is_multi_speaker and self.tts_config["speakerId"] in self.tts.speakers else None
+            speaker = self.tts_config["speakerId"] if self.tts.is_multi_speaker else None
             language = self.current_lang if self.tts.is_multi_lingual and self.current_lang in self.tts.languages else None
 
-            return self.tts.tts_to_file(
+            audio = self.tts.tts_to_file(
                 text=text,
                 speaker=speaker,
                 language=language,
                 split_sentences=split_sentences,
                 file_path=tempfile.mktemp(suffix='.wav', dir='')
             )
+        
+            return dict(audio=audio, text=text)
         
         except Exception as e:
             raise type(e)(str(e))
@@ -318,7 +341,7 @@ class Assistant:
 
 def main():
     try:
-        Assistant()
+        ALTS()
 
     except Exception as e:
         print(e)
