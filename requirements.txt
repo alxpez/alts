@@ -6,4 +6,4 @@ TTS
 simpleaudio
 litellm
 keyboard @ git+https://github.com/alxpez/keyboard.git
-notify-py @ git+https://github.com/alxpez/alts-notifypy.git
+notify-py @ git+https://github.com/alxpez/alts-notify.git

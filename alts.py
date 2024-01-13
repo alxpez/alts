@@ -6,20 +6,21 @@ import whisper
 import keyboard
 import tempfile
 import threading
+from notifypy import Notify
 from sounddevice import InputStream, default, query_devices
 from soundfile import SoundFile
 from TTS.api import TTS
 from simpleaudio import WaveObject
 from litellm import completion
 from dotenv import load_dotenv
-from notifypy import Notify
 
 load_dotenv()
 
 notification = Notify(
     default_notification_application_name="alts ",
     default_notification_title="",
-    default_notification_icon="logo.png"
+    default_notification_icon="logo.png",
+    # custom_mac_notificator="Notificator.app"
 )
 
 def notify(message=""):
@@ -82,7 +83,6 @@ class ALTS:
         self.current_lang = transcription_data["language"]
 
         print(f">>>{transcription}")
-        # notify(message=f'query: "{transcription}"')
 
         self._llm_worker(transcription)
         
@@ -97,13 +97,14 @@ class ALTS:
         """Process llm response"""
         print("\n💭 THINKING...\n")
 
+        notify(message=self.messages["thinking"])
+
         speech_thread = threading.Thread(target=self._speech_worker, daemon=True)
         speech_thread.start()
 
-        notify(message=self.messages["thinking"])
         for sentence in self.think(query=query):
-            audio = self.synthesize(text=sentence)
-            self.speech_q.put(audio)
+            synth_data = self.synthesize(text=sentence)
+            self.speech_q.put(synth_data)
         
         self.speech_q.put(None)
         speech_thread.join()
@@ -112,16 +113,16 @@ class ALTS:
     def _speech_worker(self):
         """Process speech audio files"""
         while True:
-            audio = self.speech_q.get()
+            synth_data = self.speech_q.get()
             
-            if audio is None:
+            if synth_data is None:
                 print(self.messages["ready"])
-                # notify(message=f'response: "{self.llm["messages"][-1]["content"]}"')
                 notify(message=self.messages["ready"])
                 break
 
+            notify(message=f'"{synth_data["text"].strip()}"')
             print("\n🔊 SPEAKING...\n")
-            self.speak(audio)
+            self.speak(synth_data["audio"])
 
 
     def start(self):
@@ -277,7 +278,7 @@ class ALTS:
             yield buffer
 
 
-    def synthesize(self, text, split_sentences=False):
+    def synthesize(self, text, split_sentences=True):
         """
         Synthesize text into an audio file
 
@@ -294,19 +295,21 @@ class ALTS:
 
         Returns
         -------
-        Path to the audio file with the synthesized sentence.
+        A dictionary containing the path to the audio file of the synthesized text ("audio") and the text itself ("text").
         """
         try:
             speaker = self.tts_config["speakerId"] if self.tts.is_multi_speaker else None
             language = self.current_lang if self.tts.is_multi_lingual and self.current_lang in self.tts.languages else None
 
-            return self.tts.tts_to_file(
+            audio = self.tts.tts_to_file(
                 text=text,
                 speaker=speaker,
                 language=language,
                 split_sentences=split_sentences,
                 file_path=tempfile.mktemp(suffix='.wav', dir='')
             )
+        
+            return dict(audio=audio, text=text)
         
         except Exception as e:
             raise type(e)(str(e))
