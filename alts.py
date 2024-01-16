@@ -1,20 +1,25 @@
-import os
-import sys
-import yaml
-import queue
-import whisper
+from dotenv import load_dotenv
 import keyboard
-import tempfile
-import threading
+from litellm import completion
 from notifypy import Notify
+import os
+from PIL import Image, ImageDraw
+import pystray
+import queue
+from simpleaudio import WaveObject
 from sounddevice import InputStream, default, query_devices
 from soundfile import SoundFile
+import sys
+import tempfile
+import threading
 from TTS.api import TTS
-from simpleaudio import WaveObject
-from litellm import completion
-from dotenv import load_dotenv
+import whisper
+import yaml
+
 
 load_dotenv()
+
+img=Image.open("logo.png")
 
 notification = Notify(
     default_notification_application_name="alts ",
@@ -131,14 +136,17 @@ class ALTS:
         print(self.messages["ready"])
         notify(message=self.messages["ready"])
 
+        tray_icon = pystray.Icon("alts", img, "alts")
+
         keyboard.add_hotkey(self.hotkey, lambda: self._user_audio_input_worker())
 
         user_input_thread = threading.Thread(target = self._user_text_input_worker, daemon=True)
         user_input_thread.start()
-        user_input_thread.join()
 
+        tray_icon.run()
         keyboard.wait()
-
+        user_input_thread.join()
+        
         
     def listen(self):
         """Record microphone audio to a .wav file"""

@@ -1,9 +1,10 @@
-python-dotenv
-soundfile
-sounddevice
-openai-whisper
-TTS
-simpleaudio
-litellm
 keyboard @ git+https://github.com/alxpez/keyboard.git
+litellm
 notify-py @ git+https://github.com/alxpez/alts-notify.git
+openai-whisper
+pystray
+python-dotenv
+simpleaudio
+sounddevice
+soundfile
+TTS
