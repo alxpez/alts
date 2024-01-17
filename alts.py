@@ -4,7 +4,7 @@ from litellm import completion
 from notifypy import Notify
 import os
 from PIL import Image, ImageDraw
-import pystray
+from pystray import Icon, Menu, MenuItem
 import queue
 from simpleaudio import WaveObject
 from sounddevice import InputStream, default, query_devices
@@ -19,7 +19,7 @@ import yaml
 
 load_dotenv()
 
-img=Image.open("logo.png")
+img=Image.open("icon.png")
 
 notification = Notify(
     default_notification_application_name="alts ",
@@ -136,7 +136,19 @@ class ALTS:
         print(self.messages["ready"])
         notify(message=self.messages["ready"])
 
-        tray_icon = pystray.Icon("alts", img, "alts")
+        tray_icon = Icon("alts", img, "alts", menu=Menu(
+            MenuItem(
+                'With submenu',
+                Menu(
+                    MenuItem(
+                        'Submenu item 1',
+                        lambda Icon, item: 1),
+                    MenuItem(
+                        'Submenu item 2',
+                        lambda Icon, item: 2)
+                )
+            )
+        ))
 
         keyboard.add_hotkey(self.hotkey, lambda: self._user_audio_input_worker())
 
