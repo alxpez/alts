@@ -24,7 +24,7 @@ img=Image.open("icon.png")
 notification = Notify(
     default_notification_application_name="alts ",
     default_notification_title="",
-    default_notification_icon="logo.png",
+    default_notification_icon="icon.png",
     # custom_mac_notificator="ALTS.app"
 )
 
