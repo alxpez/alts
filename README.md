@@ -1,7 +1,7 @@
 <h1 align="center">alts</h1>
 <p align="center">
   <a href="https://github.com/alxpez/alts" target="_blank">
-    <img width="180" src="logo.png">
+    <img width="180" src="icon.png">
   </a>
 </p>
 <p align="center">( 🤖 <strong>a</strong>ssistant: 🎙️ <strong>l</strong>isten | 💭 <strong>t</strong>hink | 🔊 <strong>s</strong>peak )</p>
@@ -17,6 +17,7 @@ TODO: FUTURE FEATURES:
 - long-term-memory: ability to save conversations
 (thinking of redis - ease of use and speed)
 
+[OTHER FAST_MODES... customizable?]
 - voice-to-clipboard: talk to take notes, write emails... paste raw or parsed text.
 (Use the LLM to reshape/process/parse the whisper result to get a refined result)
 (research if possible to paste automatically in the focused text-box)
@@ -24,6 +25,8 @@ TODO: FUTURE FEATURES:
 - task-bar-icon: make the python script into a proper app
 (or a simple installable package at least)
 (include interface to text too)
+
+- UI interface for config: run a local http server and serve a simple js UI
 -->
 ALTS runs in the background and waits for you to press `cmd+esc` (or `win+esc`).
 - 🎙️ While holding the hotkey, your voice will be recorded _(saves in the project root)_.

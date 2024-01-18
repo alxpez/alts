@@ -1,36 +1,35 @@
-import os
-import sys
-import yaml
-import queue
-import whisper
+from dotenv import load_dotenv
 import keyboard
-import tempfile
-import threading
+from litellm import completion
 from notifypy import Notify
+import os
+from PIL import Image, ImageDraw
+from pystray import Icon, Menu, MenuItem
+import queue
+from simpleaudio import WaveObject
 from sounddevice import InputStream, default, query_devices
 from soundfile import SoundFile
+import sys
+import tempfile
+import threading
 from TTS.api import TTS
-from simpleaudio import WaveObject
-from litellm import completion
-from dotenv import load_dotenv
+import whisper
+import yaml
+
 
 load_dotenv()
 
+icon=Image.open("tray.png")
 notification = Notify(
     default_notification_application_name="alts ",
     default_notification_title="",
-    default_notification_icon="logo.png",
+    default_notification_icon="icon.png",
     # custom_mac_notificator="ALTS.app"
 )
-
-def notify(message=""):
-    notification.message = message
-    notification.send(block=False)
 
 SENTENCE_DELIMITERS = (".", "?", "!", ";", ":", ": ", " (", ")", "\n-", "\n- ", " -", "- ", "\n–", "\n– ", " –", "– ")
 
 # TODO: improve logging (use a proper logger), remove hardcoded stdout prints.
-# TODO: better handling of KeyboardInterrupt to exit more gracefully
 # TODO: implement cancelling of assistant jobs (automatically when querying something new? by keyboard?)
 class ALTS:
     def __init__(self, auto_start=True):
@@ -48,32 +47,67 @@ class ALTS:
             config = yaml.safe_load(file)
         
         self.hotkey = config["hotkey"]
-        self.messages = config['messages']
+        self.messages = config["messages"]
+        self.show_notifications = config["showNotifications"]
 
-        notify(message=self.messages["starting"])
+        self.tray_icon = Icon("alts", icon, "alts", menu=self._tray_menu())
+
+        self._notify(message=self.messages["starting"])
 
         # Load STT model
         self.stt_config = config["whisper"]
         if not self.stt_config["isMulti"]:
             self.stt_config["model"] += f".en"
 
-        # TODO: download model if not already downloaded?? (causing error on w11)
         self.stt = whisper.load_model(self.stt_config["model"])
 
         # Load TTS model
-        # TODO: download model if not already downloaded?? (causing error on w11)
         self.tts_config = config["tts"]
         self.tts = TTS(model_name=config["tts"]["model"], progress_bar=False)
 
-        # Load LLM config: initialize messages and config req. headers
+        # Load LLM config
         self.llm = config["llm"]
-        self.llm["messages"] = [{ "role": "system", "content": self.llm["system"] }] if self.llm["system"] else []
 
+
+    def _quit(self):
+        os._exit(0)
+
+
+    def _notify(self, message=""):
+        if(self.show_notifications):
+            notification.message = message
+            notification.send(block=False)
+
+
+    def _toggle_notifications(self, _, item):
+        self.show_notifications = not item.checked
+
+
+    def _initialize_chat(self):
+        self.llm["messages"] =  [{ "role": "system", "content": self.llm["system"] }] if self.llm["system"] else []
+        print(self.messages["ready"])
+        self._notify(message=self.messages["ready"])
+
+
+    def _tray_menu(self):
+        return Menu(
+            MenuItem(
+                text='Show Notifications',
+                action=self._toggle_notifications,
+                checked=lambda MenuItem: self.show_notifications
+            ),
+            Menu.SEPARATOR,
+            MenuItem(
+                text='Quit',
+                action=self._quit,
+            ),
+        )
+    
 
     def _user_audio_input_worker(self):
         """Process user audio input"""
         print("\n🎙️  LISTENING...")
-        notify(message=self.messages["listening"])
+        self._notify(message=self.messages["listening"])
 
         audio = self.listen()
 
@@ -97,7 +131,7 @@ class ALTS:
         """Process llm response"""
         print("\n💭 THINKING...\n")
 
-        notify(message=self.messages["thinking"])
+        self._notify(message=self.messages["thinking"])
 
         speech_thread = threading.Thread(target=self._speech_worker, daemon=True)
         speech_thread.start()
@@ -117,28 +151,27 @@ class ALTS:
             
             if synth_data is None:
                 print(self.messages["ready"])
-                notify(message=self.messages["ready"])
+                self._notify(message=self.messages["ready"])
                 break
 
-            notify(message=f'"{synth_data["text"].strip()}"')
+            self._notify(message=f'"{synth_data["text"].strip()}"')
             print("\n🔊 SPEAKING...\n")
             self.speak(synth_data["audio"])
-
 
     def start(self):
         """Start assistant with default behavior"""
         os.system('cls||clear')
-        print(self.messages["ready"])
-        notify(message=self.messages["ready"])
-
+        self._initialize_chat()
         keyboard.add_hotkey(self.hotkey, lambda: self._user_audio_input_worker())
 
         user_input_thread = threading.Thread(target = self._user_text_input_worker, daemon=True)
         user_input_thread.start()
-        user_input_thread.join()
 
+        self.tray_icon.run()
         keyboard.wait()
-
+        
+        user_input_thread.join()
+        
         
     def listen(self):
         """Record microphone audio to a .wav file"""

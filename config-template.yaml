@@ -1,4 +1,5 @@
 hotkey: "cmd+esc"
+showNotifications: True
 
 messages:
   starting: "getting things ready, wait a moment..."
