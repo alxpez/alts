@@ -4,7 +4,7 @@
     <img width="180" src="icon.png">
   </a>
 </p>
-<p align="center">( 🤖 <strong>a</strong>ssistant: 🎙️ <strong>l</strong>isten | 💭 <strong>t</strong>hink | 🔊 <strong>s</strong>peak )</p>
+<p align="center">( 🎙️ <strong>l</strong>istens | 💭 <strong>t</strong>hinks | 🔊 <strong>s</strong>peaks )</p>
 
 </br>
 
@@ -42,7 +42,7 @@ You can modify the hotkey combination and other settings in your `config.yaml`.
   > (tested on) version \>=3.11 on macOS and version \>=3.8 on windows
 
 - ### llm
-  By default, the project is configured to work with [Ollama](https://ollama.ai/), running the [`dolphin-phi` model](https://ollama.ai/library/dolphin-phi) (an uncensored, very tiny and quick model). This setup makes the whole system completely free to run locally and great for low resource machines.
+  By default, the project is configured to work with [Ollama](https://ollama.ai/), running the [`stablelm2` model](https://ollama.ai/library/stablelm2) (a very tiny and quick model). This setup makes the whole system completely free to run locally and great for low resource machines.
 
   However, we use [LiteLLM](https://github.com/BerriAI/litellm) in order to be provider agnostic, so you have full freedom to pick and choose your own combinations.
   Take a look at the supported [Models/Providers](https://docs.litellm.ai/docs/providers) for more details on LLM configuration.
