@@ -16,7 +16,7 @@ whisper:
 
 llm:
   url: "http://localhost:11434"
-  model: "ollama/dolphin-phi"
+  model: "ollama/stablelm2"
   system: "You are ALTS, a helpful AI assistant"
   custom_provider: ""
 

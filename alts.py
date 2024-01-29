@@ -19,7 +19,7 @@ import yaml
 
 load_dotenv()
 
-icon=Image.open("tray.png")
+icon=Image.open("icon.png")
 notification = Notify(
     default_notification_application_name="alts ",
     default_notification_title="",
@@ -50,8 +50,6 @@ class ALTS:
         self.messages = config["messages"]
         self.show_notifications = config["showNotifications"]
 
-        self.tray_icon = Icon("alts", icon, "alts", menu=self._tray_menu())
-
         self._notify(message=self.messages["starting"])
 
         # Load STT model
@@ -68,6 +66,7 @@ class ALTS:
         # Load LLM config
         self.llm = config["llm"]
 
+        self.tray_icon = Icon("alts", icon, "alts")
 
     def _quit(self):
         os._exit(0)
@@ -79,26 +78,35 @@ class ALTS:
             notification.send(block=False)
 
 
-    def _toggle_notifications(self, _, item):
-        self.show_notifications = not item.checked
+    def _toggle_notifications(self):
+        self.show_notifications = not self.show_notifications
 
 
-    def _initialize_chat(self):
-        self.llm["messages"] =  [{ "role": "system", "content": self.llm["system"] }] if self.llm["system"] else []
-        print(self.messages["ready"])
+    def _initialize_chat(self, chat=None):
+        self.current_chat = chat["title"] if chat else ""
+        self.llm["messages"] = chat["messages"] if chat else []
+
+        if not self.llm["messages"] and self.llm["system"]:
+            self.llm["messages"] = [{ "role": "system", "content": self.llm["system"] }]
+        
+        os.system('cls||clear')
+
+        self.tray_icon.menu = self._tray_menu()
+        
         self._notify(message=self.messages["ready"])
+        print(self.messages["ready"])
 
 
     def _tray_menu(self):
         return Menu(
             MenuItem(
-                text='Show Notifications',
+                text="Show Notifications",
                 action=self._toggle_notifications,
-                checked=lambda MenuItem: self.show_notifications
+                checked=lambda _: self.show_notifications
             ),
             Menu.SEPARATOR,
             MenuItem(
-                text='Quit',
+                text="Quit",
                 action=self._quit,
             ),
         )
@@ -160,8 +168,8 @@ class ALTS:
 
     def start(self):
         """Start assistant with default behavior"""
-        os.system('cls||clear')
         self._initialize_chat()
+
         keyboard.add_hotkey(self.hotkey, lambda: self._user_audio_input_worker())
 
         user_input_thread = threading.Thread(target = self._user_text_input_worker, daemon=True)
