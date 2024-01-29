@@ -1,7 +1,7 @@
 <h1 align="center">alts</h1>
 <p align="center">
   <a href="https://github.com/alxpez/alts" target="_blank">
-    <img width="180" src="icon.png">
+    <img width="180" src="icon_v2.png">
   </a>
 </p>
 <p align="center">( 🎙️ <strong>l</strong>istens | 💭 <strong>t</strong>hinks | 🔊 <strong>s</strong>peaks )</p>
