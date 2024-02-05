@@ -19,11 +19,11 @@ import yaml
 
 load_dotenv()
 
-icon=Image.open("icon.png")
+icon=Image.open("icon_v2.png")
 notification = Notify(
     default_notification_application_name="alts ",
     default_notification_title="",
-    default_notification_icon="icon.png",
+    default_notification_icon="icon_v2.png",
     # custom_mac_notificator="ALTS.app"
 )
 
