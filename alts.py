@@ -54,9 +54,6 @@ class ALTS:
 
         # Load STT model
         self.stt_config = config["whisper"]
-        if not self.stt_config["isMulti"]:
-            self.stt_config["model"] += f".en"
-
         self.stt = whisper.load_model(self.stt_config["model"])
 
         # Load TTS model
@@ -67,6 +64,7 @@ class ALTS:
         self.llm = config["llm"]
 
         self.tray_icon = Icon("alts", icon, "alts")
+
 
     def _quit(self):
         os._exit(0)

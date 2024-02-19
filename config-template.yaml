@@ -11,8 +11,7 @@ messages:
   speaking: "responding to you..."
 
 whisper:
-  model: "tiny"
-  isMulti: false
+  model: "tiny.en"
 
 llm:
   url: "http://localhost:11434"
