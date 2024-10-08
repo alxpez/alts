@@ -3,7 +3,7 @@ import keyboard
 from litellm import completion
 from notifypy import Notify
 import os
-from PIL import Image
+from PIL import Image, ImageDraw
 from pystray import Icon, Menu, MenuItem
 import queue
 from simpleaudio import WaveObject
@@ -15,10 +15,6 @@ import threading
 from TTS.api import TTS
 import whisper
 import yaml
-
-from utils.string import find_matching_substrings, remove_substring
-from utils.browser import perplex, youtube
-from utils.notes import new_note
 
 
 load_dotenv()
@@ -128,34 +124,8 @@ class ALTS:
 
         print(f">>>{transcription}")
 
-        # Check for keyboard matches at the beginning of the transcription and executes alternative actions
-        match = self._check_for_keywords(transcription)
+        self._llm_worker(transcription)
         
-        if match["keyword"]:
-            func = match["action"]
-            search = remove_substring(transcription, match["keyword"])
-            func(search)
-
-        print(self.messages["ready"])
-        self._notify(message=self.messages["ready"])
-
-        # else:
-        #     self._llm_worker(transcription)
-    
-
-
-    def _check_for_keywords(self, text):
-        keywords = {
-            "search": perplex,
-            "youtube": youtube,
-            "quick note": new_note
-        }
-
-        matched_keyword = find_matching_substrings(text, list(keywords.keys()))
-        action = keywords.get(matched_keyword)
-
-        return dict(keyword=matched_keyword, action=action)
-
     
     def _user_text_input_worker(self):
         """Process user text input"""

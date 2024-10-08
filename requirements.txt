@@ -1,9 +1,12 @@
 keyboard @ git+https://github.com/alxpez/keyboard.git
 litellm
 notify-py @ git+https://github.com/alxpez/alts-notify.git
+macnotesapp
 openai-whisper
+Pillow
 pystray
 python-dotenv
+PyYAML
 simpleaudio
 sounddevice
 soundfile
